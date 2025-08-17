@@ -1,0 +1,68 @@
+# GitHub Action workflow to build truecrack.exe for Windows.
+#
+# To use this workflow:
+# 1. Go to your repository on GitHub.
+# 2. Click on the "Actions" tab.
+# 3. Click "New workflow", then "set up a workflow yourself".
+# 4. Name the file `build.yml` (or any other .yml name).
+# 5. Copy and paste the content of this file into the editor.
+# 6. Commit the new file.
+#
+# The workflow will now run automatically whenever you push to the master branch.
+# You can also trigger it manually from the Actions tab.
+
+name: Build truecrack.exe
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events for the master branch
+  push:
+    branches: [ "master" ]
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+    
+    # Default shell to use for all run steps in this job
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      # 1. Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Sets up the MSYS2 environment, which provides a Linux-like environment on Windows
+      #    and allows us to install the MinGW-w64 compiler toolchain.
+      - name: Set up MSYS2 and MinGW compiler
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            make
+
+      # 3. Runs the 'make' command to compile the project using the provided Makefile.
+      #    The MinGW g++ compiler will automatically create 'truecrack.exe'.
+      - name: Build the project with make
+        run: make
+
+      # 4. (Optional) List files in the directory to verify the .exe was created
+      - name: Verify build artifact
+        run: ls -l
+
+      # 5. Uploads the compiled executable as a build artifact.
+      #    You can download this file from the "Summary" page of the completed workflow run.
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Name of the artifact to be uploaded
+          name: truecrack-windows-exe
+          # Path to the file to upload
+          path: truecrack.exe
